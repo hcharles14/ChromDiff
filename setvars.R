@@ -172,6 +172,30 @@ perform.wilcoxtest <- function(matrix.a, matrix.b) {
     } 
     return(p.vals) 
 } 
+		
+#added by Yu He on 02/20/2017
+perform.greater_wilcox_onesidedtest <- function(matrix.a, matrix.b) { 
+    if(dim(matrix.a)[1]!=dim(matrix.b)[1]) { 
+        stop("ERROR: data matrices must have same number of features (rows)") 
+    } 
+    numfeats=dim(matrix.a)[1] 
+    p.vals=rep(NA, times=numfeats) 
+    names(p.vals)=rownames(matrix.a) 
+    for(feat.ind in 1:numfeats) { 
+        if (feat.ind%%10000==0) { 
+            print(paste("Processing feature ", feat.ind, "...", sep="")) 
+        } 
+        v1=matrix.a[feat.ind,] 
+        v2=matrix.b[feat.ind,] 
+		result=try(wilcox.test(matrix.a[feat.ind,], matrix.b[feat.ind,], alternative="greater", paired=FALSE, mu=0, na.action=na.omit), silent=TRUE)        
+        if(!is(result,"try-error") && !is.na(result$p.val)) { 
+            ## fill in p-values for successful tests 
+            p.vals[feat.ind]=result$p.val 
+        } 
+    } 
+    return(p.vals) 
+} #end 
+		
 perform.ttest <- function(matrix.a, matrix.b) {
     if(dim(matrix.a)[1]!=dim(matrix.b)[1]) {
         stop("ERROR: data matrices must have same number of features (rows)")
@@ -255,11 +279,13 @@ names(metric.subdirs)=metric.labels
 names(feat.files)=metric.labels
 
 ## variables for test
-test.labels=c("ttest", "wilcox", "ftest")
-test.subdirs=c("ttest/", "wilcox/", "ftest/")
-test.funcs=c(perform.ttest, perform.wilcoxtest, perform.ftest)
+#modified by Yu He on 02/20/2017
+test.labels=c("ttest", "wilcox", "ftest", "greater_wilcox_onesided")
+test.subdirs=c("ttest/", "wilcox/", "ftest/", "greater_wilcox_onesided/")
+test.funcs=c(perform.ttest, perform.wilcoxtest, perform.ftest, perform.greater_wilcox_onesidedtest)
 names(test.subdirs)=test.labels
 names(test.funcs)=test.labels
+#end of modification
 
 ## variables for hypothesis correction
 corr.labels=c("bonferroni", "fdr", "BY")
